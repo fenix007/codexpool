@@ -1,0 +1,16 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# данные и секреты
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+master.key
+.env
+
+# результаты бенчмарка
+bench/results/
+__pycache__/
+*.pyc

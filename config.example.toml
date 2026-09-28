@@ -1,0 +1,53 @@
+listen = "127.0.0.1:8787"
+stats_listen = "127.0.0.1:8788"
+client_keys = ["sk-local-codex-1"]
+admin_key = "change-me"
+data_dir = "~/.codexpool"
+default_combo = "default"
+
+[upstream]
+transport = "http"              # http | ws (эксперимент, MVP-3)
+tls_profile = "native"          # native | chrome (feature tls-impersonate)
+first_byte_timeout_ms = 30000
+idle_timeout_ms = 60000
+pool_max_idle_per_host = 32
+default_user_agent = "codex-cli/0.155.0 (Linux; x86_64)"
+default_originator = "codex_cli_rs"
+
+[failover]
+max_attempts = 4
+attempt_budget_ms = 20000
+cooldown_429_default_s = 60
+cooldown_5xx_s = 60
+cooldown_403_s = 300
+cooldown_needs_login_s = 1800
+backoff_max_s = 1800
+wait_for_cooldown_s = 30          # весь пул в cooldown → подождать ближайший (как stable 1c6a46a27)
+same_account_transport_retry = true  # 1 повтор transport-ошибки до вывода (как stable de2b0cdcc)
+
+[refresh]
+lead_s = 600
+usage_poll_interval_s = 300
+warmup = false
+
+[stats]
+retention_days = 30
+store_errors = true
+channel_capacity = 4096
+
+[models]
+default_scope = "codex"
+scope = { "gpt-5.1-codex-max" = "spark" }
+aliases = { auto = "gpt-5.1-codex" }
+
+[[combo]]
+name = "default"
+
+  [[combo.step]]
+  accounts = ["*"]
+  strategy = "quota_deadline"  # quota_deadline (порт из stable) | priority | round_robin | least_inflight | headroom | reset_soonest
+  sticky = "session"           # session (по умолчанию, сохраняет prompt-cache) | none
+
+  [[combo.step]]
+  accounts = ["reserve-*"]
+  strategy = "priority"

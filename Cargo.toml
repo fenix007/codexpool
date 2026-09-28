@@ -1,0 +1,55 @@
+[package]
+name = "codexpool"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Fast multi-account proxy for OpenAI Codex (ChatGPT OAuth): combo routing, failover/failback, stats API"
+license = "MIT"
+
+[features]
+default = []
+tls-impersonate = ["wreq"]   # браузерный TLS-fingerprint (тот же крейт, что под wreq-js в OmniRoute)
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.8", features = ["http2", "macros"] }
+hyper = { version = "1", features = ["http1", "http2"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "timeout", "cors", "request-id", "util"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2", "stream", "json", "gzip"] }
+wreq = { version = "5", optional = true }
+futures = "0.3"
+bytes = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+toml = "0.8"
+rusqlite = { version = "0.32", features = ["bundled", "chrono"] }
+dashmap = "6"
+parking_lot = "0.12"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.16", default-features = false }
+thiserror = "2"
+anyhow = "1"
+base64 = "0.22"
+sha2 = "0.10"
+aes-gcm = "0.10"
+scrypt = "0.11"
+hex = "0.4"
+notify = "7"
+directories = "5"
+http = "1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.6"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

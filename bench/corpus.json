@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "notes": "Фиксированный корпус для сравнения бэкендов. Не менять тексты между прогонами — иначе сравнение TTFT/TPS некорректно. max_output_tokens ограничивает длину, чтобы TPS считался на сопоставимом объёме.",
+  "cases": [
+    {
+      "id": "short_echo",
+      "kind": "short",
+      "instructions": "Отвечай одним словом.",
+      "prompt": "Назови столицу Франции.",
+      "max_output_tokens": 16
+    },
+    {
+      "id": "short_code",
+      "kind": "short",
+      "instructions": "Ты помощник-программист. Отвечай только кодом без пояснений.",
+      "prompt": "Напиши функцию на Python, которая возвращает n-е число Фибоначчи итеративно.",
+      "max_output_tokens": 200
+    },
+    {
+      "id": "medium_gen",
+      "kind": "generation",
+      "instructions": "Ты технический писатель.",
+      "prompt": "Опиши в 12 абзацах архитектуру обратного прокси для потоковых SSE-ответов: приём запроса, выбор upstream, проброс потока, обработка ошибок, наблюдаемость. Без списков, только связный текст.",
+      "max_output_tokens": 1200
+    },
+    {
+      "id": "long_context",
+      "kind": "long_input",
+      "instructions": "Отвечай кратко.",
+      "prompt_file": "long_context_input.txt",
+      "prompt": "(заменяется содержимым prompt_file при подготовке корпуса: ~25k токенов исходного кода + вопрос 'Найди все места, где refresh_token записывается на диск, и перечисли файлы')",
+      "max_output_tokens": 300
+    },
+    {
+      "id": "tool_call",
+      "kind": "tools",
+      "instructions": "Используй инструменты, когда они подходят.",
+      "prompt": "Какая погода в Москве прямо сейчас? Используй инструмент get_weather.",
+      "tools": [
+        {
+          "type": "function",
+          "name": "get_weather",
+          "description": "Возвращает текущую погоду в городе",
+          "parameters": {
+            "type": "object",
+            "properties": { "city": { "type": "string" } },
+            "required": ["city"]
+          }
+        }
+      ],
+      "max_output_tokens": 100
+    }
+  ]
+}
