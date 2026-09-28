@@ -47,7 +47,14 @@
 
 ## 4. Протокол прогона
 
-0. **Проверка протокола (первый шаг, с прод-хоста):** `curl -sS -o /dev/null -w '%{http_version}\n' --http2 https://chatgpt.com/backend-api/codex/responses` и `echo | openssl s_client -connect chatgpt.com:443 -alpn h2,http/1.1 | grep ALPN`. Из sandbox бессмысленно: egress там перехватывается TLS-прокси. Затем выровнять конфиг бэкендов (стратегия Codex, affinity TTL, preflight, `retryCodexAccountOnTimeout`) и записать фактические значения.
+0. **Проверка протокола (первый шаг, с прод-хоста):** `curl -sS -o /dev/null -w '%{http_version}\n' --http2 https://chatgpt.com/backend-api/codex/responses` и `echo | openssl s_client -connect chatgpt.com:443 -alpn h2,http/1.1 | grep ALPN`. Из sandbox бессмысленно: egress там перехватывается TLS-прокси. **Результат 28.09: `2` (HTTP/2) с хоста codotok.** Дополнительно проверить, что h2 согласует сам undici в контейнере stable (команда ниже) и что это прод-хост OmniRoute; если egress идёт через HTTP-прокси — повторить через него.
+
+   ```bash
+   # внутри контейнера stable (каталог приложения, где есть node_modules/undici)
+   node -e "const dc=require('diagnostics_channel');dc.subscribe('undici:client:connected',m=>console.log('alpn=',m.socket.alpnProtocol));const {fetch,Agent}=require('undici');fetch('https://chatgpt.com/backend-api/codex/responses',{method:'POST',body:'{}',headers:{'content-type':'application/json'},dispatcher:new Agent({connections:1,pipelining:0})}).then(r=>console.log('status',r.status))"
+   ```
+
+   Затем выровнять конфиг бэкендов (стратегия Codex, affinity TTL, preflight, `retryCodexAccountOnTimeout`) и записать фактические значения.
 1. **Прогрев**: 1 запрос `short_echo` на каждый бэкенд (TLS/h2 соединения, JIT Node в OmniRoute).
 2. **Серия A — латентность** (`concurrency = 1`): все кейсы × `repeat ≥ 30` (не меньше 200 запросов на бэкенд в сумме по сериям), порядок бэкендов **перемешивается на каждом повторе** (seed записывается), чтобы нелинейный дрейф upstream распределился равномерно.
 3. **Серия B — параллелизм** (`concurrency` = 1 / 4 / 8 / 16 / 32): `short_echo` и `medium_gen` × 10 на каждом уровне, `direct` на тех же уровнях — как базовая линия. Смотрим деградацию TTFT p95 и TPS относительно `direct` — здесь проявляются блокировки event loop, пересборка кэша соединений stable и очередь в диспетчере.
